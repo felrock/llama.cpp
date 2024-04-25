@@ -1397,24 +1397,15 @@ class VocabFactory:
 
     def _create_vocab_by_path(self, vocab_types: list[str]) -> Vocab:
         vocab_classes: dict[str, type[Vocab]] = {cls.name: cls for cls in self._VOCAB_CLASSES}
-        selected_vocabs: dict[str, type[Vocab]] = {}
         for vtype in vocab_types:
             try:
-                selected_vocabs[vtype] = vocab_classes[vtype]
+                cls = vocab_classes[vtype]
+                vocab = cls(self.path)
+                return vocab
             except KeyError:
                 raise ValueError(f"Unsupported vocabulary type {vtype}") from None
 
-        for vtype, cls in selected_vocabs.items():
-            try:
-                vocab = cls(self.path)
-                break
-            except FileNotFoundError:
-                pass  # ignore unavailable tokenizers
-        else:
-            raise FileNotFoundError(f"Could not find a tokenizer matching any of {vocab_types}")
-
-        print(f"Loaded vocab file {vocab.fname_tokenizer!r}, type {vocab.name!r}")
-        return vocab
+        raise FileNotFoundError(f"Could not find a tokenizer matching any of {vocab_types}")
 
     def load_vocab(self, vocab_types: list[str] | None, model_parent_path: Path) -> tuple[BaseVocab, gguf.SpecialVocab]:
         vocab: BaseVocab
